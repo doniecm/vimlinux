@@ -41,6 +41,15 @@ nnoremap <leader><space> :noh<cr>
 nnoremap <tab> %
 vnoremap <tab> %
 
+" Make Sure that Vim returns to the same line when we reopen a file"
+augroup line_return
+    au!
+    au BufReadPost *
+        \ if line("'\"") > 0 && line("'\"") <= line("$") |
+        \ execute 'normal! g`"zvzz' |
+        \ endif
+augroup END
+
 "Make Vim to handle long lines nicely.
 set wrap
 set textwidth=120
@@ -81,7 +90,7 @@ if has("gui_running")
     set guioptions+=a
     set guioptions+=m
     color ir_black
-    set listchars=tab:â–¸\ ,eol:Â¬ " Invisibles using the Textmate style
+    set listchars=tab:¿\ ,eol:¬ 
 endif
 
 " plugin settings
