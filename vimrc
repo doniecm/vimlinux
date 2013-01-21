@@ -8,7 +8,7 @@ filetype plugin indent on
 "general settings
 syntax on
 set number
-set relativenumber
+"set relativenumber
 set nocompatible
 set modelines=0
 set shell=/bin/bash
@@ -45,7 +45,7 @@ vnoremap <tab> %
 set wrap
 set textwidth=120
 set formatoptions=qrn1
-set colorcolumn=120
+"set colorcolumn=120
 
 "keymappings
 imap jj <ESC>
@@ -83,3 +83,18 @@ if has("gui_running")
     color ir_black
     set listchars=tab:▸\ ,eol:¬ " Invisibles using the Textmate style
 endif
+
+" plugin settings
+" Mini Buffer some settigns."
+let g:miniBufExplMapWindowNavVim = 1
+let g:miniBufExplMapWindowNavArrows = 1
+let g:miniBufExplMapCTabSwitchBufs = 1
+let g:miniBufExplModSelTarget = 1
+
+"Rope Plugin settings
+imap <leader>j <ESC>:RopeGotoDefinition<cr>
+nmap <leader>j <ESC>:RopeGotoDefinition<cr>
+
+"Tagbar key bindings."
+nmap <leader>l <ESC>:TagbarToggle<cr>
+imap <leader>l <ESC>:TagbarToggle<cr>ij"""""
