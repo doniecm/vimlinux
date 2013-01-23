@@ -1,9 +1,23 @@
-filetype off
-call pathogen#runtime_append_all_bundles()
-call pathogen#infect()
-call pathogen#helptags()
-syntax on
+" filetype off
 filetype plugin indent on
+" call pathogen#runtime_append_all_bundles()
+" call pathogen#infect()
+" call pathogen#helptags()
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
+
+" let Vundle manage Vundle
+" required! 
+Bundle 'gmarik/vundle'
+" vundle bundles
+Bundle 'klen/python-mode'
+Bundle 'scrooloose/nerdcommenter'
+Bundle 'fholgado/minibufexpl.vim'
+Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
+Bundle 'scrooloose/nerdtree'
+Bundle 'filepirate'
+
+syntax on
 
 "general settings
 syntax on
@@ -91,12 +105,14 @@ if has("gui_running")
     set guioptions+=m
     color ir_black
     set listchars=tab:¿\ ,eol:¬ 
+    "set guifont=Meslo\ LG\ M\ DZ\ for\ Powerline\ 10
+    set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
 endif
 
 " plugin settings
 " Mini Buffer some settigns."
 let g:miniBufExplMapWindowNavVim = 1
-let g:miniBufExplMapWindowNavArrows = 1
+let g:miniBufExplMapWindowNavArrows = 0
 let g:miniBufExplMapCTabSwitchBufs = 1
 let g:miniBufExplModSelTarget = 1
 
