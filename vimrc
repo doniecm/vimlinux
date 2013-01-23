@@ -17,8 +17,6 @@ Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'filepirate'
 
-syntax on
-
 "general settings
 syntax on
 set number
@@ -29,6 +27,8 @@ set shell=/bin/bash
 set lazyredraw
 set matchtime=3
 set laststatus=2
+set encoding=utf-8
+
 
 "let mapleader = "\"
 set title
@@ -107,6 +107,7 @@ if has("gui_running")
     set listchars=tab:¿\ ,eol:¬ 
     "set guifont=Meslo\ LG\ M\ DZ\ for\ Powerline\ 10
     set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
+    let g:Powerline_symbols = 'fancy'
 endif
 
 " plugin settings
