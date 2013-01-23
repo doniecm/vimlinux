@@ -15,6 +15,7 @@ Bundle 'scrooloose/nerdcommenter'
 Bundle 'fholgado/minibufexpl.vim'
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'scrooloose/nerdtree'
+Bundle 'majutsushi/tagbar'
 Bundle 'filepirate'
 
 "general settings
@@ -72,7 +73,11 @@ set formatoptions=qrn1
 
 "keymappings
 imap jj <ESC>
+"save
 map <C-s> :w<CR>
+" open new window
+nnoremap <leader>w <C-w>v<C-w>l
+
 "bubbling
 nmap <C-Up> ddkP
 nmap <C-Down> ddp
