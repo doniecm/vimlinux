@@ -1,8 +1,5 @@
 " filetype off
 filetype plugin indent on
-" call pathogen#runtime_append_all_bundles()
-" call pathogen#infect()
-" call pathogen#helptags()
 set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
@@ -16,6 +13,7 @@ Bundle 'fholgado/minibufexpl.vim'
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'majutsushi/tagbar'
+Bundle 'altercation/vim-colors-solarized'
 Bundle 'filepirate'
 
 "general settings
@@ -34,7 +32,7 @@ set encoding=utf-8
 "let mapleader = "\"
 set title
 set mouse=a
-colors desert
+colors solarized
 set cpoptions+=$
 
 "tab settings
@@ -108,7 +106,6 @@ if has("gui_running")
     set guioptions-=L
     set guioptions+=a
     set guioptions+=m
-    color ir_black
     set listchars=tab:¿\ ,eol:¬ 
     "set guifont=Meslo\ LG\ M\ DZ\ for\ Powerline\ 10
     set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
@@ -129,3 +126,9 @@ nmap <leader>j <ESC>:RopeGotoDefinition<cr>
 "Tagbar key bindings."
 nmap <leader>l <ESC>:TagbarToggle<cr>
 imap <leader>l <ESC>:TagbarToggle<cr>ij"""""
+
+" Mapping to NERDTree
+nnoremap <C-n> :NERDTreeToggle<cr>
+
+"python-mode settings
+let g:pymode_lint_checker = "pyflakes,pep8"
