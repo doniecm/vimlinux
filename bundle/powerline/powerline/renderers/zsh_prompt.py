@@ -1,14 +1,16 @@
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
 from powerline.renderers.shell import ShellRenderer
 
 
 class ZshPromptRenderer(ShellRenderer):
 	'''Powerline zsh prompt segment renderer.'''
-	def hl(self, fg=None, bg=None, attr=None):
-		'''Highlight a segment.
+	escape_hl_start = '%{'
+	escape_hl_end = '%}'
 
-		Returns the default ShellRenderer escape sequence with %{...%} wrapped
-		around it (required in zsh prompts).
-		'''
-		return '%{' + super(ZshPromptRenderer, self).hl(fg, bg, attr) + '%}'
+	@staticmethod
+	def escape(string):
+		return string.replace('%', '%%').replace('\\', '\\\\')
+
+
+renderer = ZshPromptRenderer

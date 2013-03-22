@@ -1,60 +1,110 @@
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
 from __future__ import absolute_import
 
 import os
-import vim
+try:
+	import vim
+except ImportError:
+	vim = {}  # NOQA
 
-from powerline.bindings.vim import vim_get_func
-from powerline.lib import memoize
+from powerline.bindings.vim import vim_get_func, getbufvar
+from powerline.theme import requires_segment_info
+from powerline.lib import add_divider_highlight_group
 from powerline.lib.vcs import guess
+from powerline.lib.humanize_bytes import humanize_bytes
+from powerline.lib.threaded import KwThreadedSegment, with_docstring
+from powerline.lib import wraps_saveargs as wraps
+from collections import defaultdict
 
 vim_funcs = {
-	'col': vim_get_func('col', rettype=int),
 	'virtcol': vim_get_func('virtcol', rettype=int),
+	'fnamemodify': vim_get_func('fnamemodify'),
 	'expand': vim_get_func('expand'),
-	'line': vim_get_func('line', rettype=int),
-	'mode': vim_get_func('mode'),
+	'bufnr': vim_get_func('bufnr', rettype=int),
+	'line2byte': vim_get_func('line2byte', rettype=int),
 }
 
 vim_modes = {
-	'n': u'NORMAL',
-	'no': u'N·OPER',
-	'v': u'VISUAL',
-	'V': u'V·LINE',
-	'^V': u'V·BLCK',
-	's': u'SELECT',
-	'S': u'S·LINE',
-	'^S': u'S·BLCK',
-	'i': u'INSERT',
-	'R': u'REPLACE',
-	'Rv': u'V·RPLCE',
-	'c': u'COMMND',
-	'cv': u'VIM EX',
-	'ce': u'EX',
-	'r': u'PROMPT',
-	'rm': u'MORE',
-	'r?': u'CONFIRM',
-	'!': u'SHELL',
-}
-
-mode_translations = {
-	chr(ord('V') - 0x40): '^V',
-	chr(ord('S') - 0x40): '^S',
+	'n': 'NORMAL',
+	'no': 'N·OPER',
+	'v': 'VISUAL',
+	'V': 'V·LINE',
+	'^V': 'V·BLCK',
+	's': 'SELECT',
+	'S': 'S·LINE',
+	'^S': 'S·BLCK',
+	'i': 'INSERT',
+	'R': 'REPLACE',
+	'Rv': 'V·RPLCE',
+	'c': 'COMMND',
+	'cv': 'VIM EX',
+	'ce': 'EX',
+	'r': 'PROMPT',
+	'rm': 'MORE',
+	'r?': 'CONFIRM',
+	'!': 'SHELL',
 }
 
 
-def mode(override=None):
+eventcaches = defaultdict(lambda: [])
+bufeventcaches = defaultdict(lambda: [])
+
+
+def purgeonevents_reg(events, eventcaches=bufeventcaches):
+	def cache_reg_func(cache):
+		for event in events:
+			if event not in eventcaches:
+				vim.eval('PowerlineRegisterCachePurgerEvent("' + event + '")')
+			eventcaches[event].append(cache)
+	return cache_reg_func
+
+purgeall_on_shell = purgeonevents_reg(('ShellCmdPost', 'ShellFilterPost', 'FocusGained'), eventcaches=eventcaches)
+purgebuf_on_shell_and_write = purgeonevents_reg(('BufWritePost', 'ShellCmdPost', 'ShellFilterPost', 'FocusGained'))
+
+
+def launchevent(event):
+	global eventcaches
+	global bufeventcaches
+	for cache in eventcaches[event]:
+		cache.clear()
+	if bufeventcaches[event]:
+		buf = int(vim_funcs['expand']('<abuf>'))
+		for cache in bufeventcaches[event]:
+			try:
+				cache.pop(buf)
+			except KeyError:
+				pass
+
+
+# TODO Remove cache when needed
+def window_cached(func):
+	cache = {}
+
+	@requires_segment_info
+	@wraps(func)
+	def ret(segment_info, **kwargs):
+		window_id = segment_info['window_id']
+		if segment_info['mode'] == 'nc':
+			return cache.get(window_id)
+		else:
+			r = func(**kwargs)
+			cache[window_id] = r
+			return r
+
+	return ret
+
+
+@requires_segment_info
+def mode(segment_info, override=None):
 	'''Return the current vim mode.
 
-	This function returns a tuple with the shorthand mode and the mode expanded
-	into a descriptive string. The longer string can be overridden by providing
-	a dict with the mode and the new string::
-
-		mode = mode({ 'n': 'NORM' })
+	:param dict override:
+		dict for overriding default mode strings, e.g. ``{ 'n': 'NORM' }``
 	'''
-	mode = vim_funcs['mode']().decode('utf-8')
-	mode = mode_translations.get(mode, mode)
+	mode = segment_info['mode']
+	if mode == 'nc':
+		return None
 	if not override:
 		return vim_modes[mode]
 	try:
@@ -63,115 +113,321 @@ def mode(override=None):
 		return vim_modes[mode]
 
 
-def modified_indicator(text=u'+'):
-	'''Return a file modified indicator.'''
-	return text if int(vim.eval('&modified')) else None
+@requires_segment_info
+def modified_indicator(segment_info, text='+'):
+	'''Return a file modified indicator.
+
+	:param string text:
+		text to display if the current buffer is modified
+	'''
+	return text if int(getbufvar(segment_info['bufnr'], '&modified')) else None
 
 
-def paste_indicator(text='PASTE'):
-	'''Return a paste mode indicator.'''
+@requires_segment_info
+def paste_indicator(segment_info, text='PASTE'):
+	'''Return a paste mode indicator.
+
+	:param string text:
+		text to display if paste mode is enabled
+	'''
 	return text if int(vim.eval('&paste')) else None
 
 
-def readonly_indicator(text=u''):
-	'''Return a read-only indicator.'''
-	return text if int(vim.eval('&readonly')) else None
+@requires_segment_info
+def readonly_indicator(segment_info, text=''):
+	'''Return a read-only indicator.
+
+	:param string text:
+		text to display if the current buffer is read-only
+	'''
+	return text if int(getbufvar(segment_info['bufnr'], '&readonly')) else None
 
 
-def file_directory():
-	'''Return file directory (head component of the file path).'''
-	file_directory = vim_funcs['expand']('%:~:.:h')
-	return file_directory.decode('utf-8') + os.sep if file_directory else None
+@requires_segment_info
+def file_directory(segment_info, shorten_user=True, shorten_cwd=True, shorten_home=False):
+	'''Return file directory (head component of the file path).
 
+	:param bool shorten_user:
+		shorten ``$HOME`` directory to :file:`~/`
 
-def file_name(display_no_file=False, no_file_text='[No file]'):
-	'''Return file name (tail component of the file path).'''
-	file_name = vim_funcs['expand']('%:~:.:t')
-	if not file_name and not display_no_file:
+	:param bool shorten_cwd:
+		shorten current directory to :file:`./`
+
+	:param bool shorten_home:
+		shorten all directories in :file:`/home/` to :file:`~user/` instead of :file:`/home/user/`.
+	'''
+	name = segment_info['buffer'].name
+	if not name:
 		return None
-	if not file_name:
-		return [{
-			'contents': no_file_text,
-			'highlight_group': ['file_name_no_file', 'file_name'],
-			}]
-	return file_name.decode('utf-8')
+	file_directory = vim_funcs['fnamemodify'](name, (':~' if shorten_user else '')
+												+ (':.' if shorten_cwd else '') + ':h')
+	if shorten_home and file_directory.startswith('/home/'):
+		file_directory = '~' + file_directory[6:]
+	return file_directory + os.sep if file_directory else None
 
 
-def file_format():
+@requires_segment_info
+def file_name(segment_info, display_no_file=False, no_file_text='[No file]'):
+	'''Return file name (tail component of the file path).
+
+	:param bool display_no_file:
+		display a string if the buffer is missing a file name
+	:param str no_file_text:
+		the string to display if the buffer is missing a file name
+	'''
+	name = segment_info['buffer'].name
+	if not name:
+		if display_no_file:
+			return [{
+				'contents': no_file_text,
+				'highlight_group': ['file_name_no_file', 'file_name'],
+				}]
+		else:
+			return None
+	file_name = vim_funcs['fnamemodify'](name, ':~:.:t')
+	return file_name
+
+
+@window_cached
+def file_size(suffix='B', si_prefix=False):
+	'''Return file size in &encoding.
+
+	:param str suffix:
+		string appended to the file size
+	:param bool si_prefix:
+		use SI prefix, e.g. MB instead of MiB
+	:return: file size or None if the file isn't saved or if the size is too big to fit in a number
+	'''
+	# Note: returns file size in &encoding, not in &fileencoding. But returned 
+	# size is updated immediately; and it is valid for any buffer
+	file_size = vim_funcs['line2byte'](len(vim.current.buffer) + 1) - 1
+	return humanize_bytes(file_size, suffix, si_prefix)
+
+
+@requires_segment_info
+@add_divider_highlight_group('background:divider')
+def file_format(segment_info):
 	'''Return file format (i.e. line ending type).
 
-	Returns None for unknown or missing file format.
+	:return: file format or None if unknown or missing file format
+
+	Divider highlight group used: ``background:divider``.
 	'''
-	return vim.eval('&fileformat') or None
+	return getbufvar(segment_info['bufnr'], '&fileformat') or None
 
 
-def file_encoding():
+@requires_segment_info
+@add_divider_highlight_group('background:divider')
+def file_encoding(segment_info):
 	'''Return file encoding/character set.
 
-	Returns None for unknown or missing file encoding.
+	:return: file encoding/character set or None if unknown or missing file encoding
+
+	Divider highlight group used: ``background:divider``.
 	'''
-	return vim.eval('&fileencoding') or None
+	return getbufvar(segment_info['bufnr'], '&fileencoding') or None
 
 
-def file_type():
+@requires_segment_info
+@add_divider_highlight_group('background:divider')
+def file_type(segment_info):
 	'''Return file type.
 
-	Returns None for unknown file types.
+	:return: file type or None if unknown file type
+
+	Divider highlight group used: ``background:divider``.
 	'''
-	return vim.eval('&filetype') or None
+	return getbufvar(segment_info['bufnr'], '&filetype') or None
 
 
-def line_percent(gradient=False):
-	'''Return the cursor position in the file as a percentage.'''
-	line_current = vim_funcs['line']('.')
-	line_last = vim_funcs['line']('$')
+@requires_segment_info
+def line_percent(segment_info, gradient=False):
+	'''Return the cursor position in the file as a percentage.
+
+	:param bool gradient:
+		highlight the percentage with a color gradient (by default a green to red gradient)
+
+	Highlight groups used: ``line_percent_gradient`` (gradient) or ``line_percent``.
+	'''
+	line_current = segment_info['window'].cursor[0]
+	line_last = len(segment_info['buffer'])
 	percentage = int(line_current * 100 // line_last)
 	if not gradient:
-		return percentage
+		return str(percentage)
 	return [{
-		'contents': percentage,
-		'highlight_group': ['line_percent_gradient' + str(int(5 * percentage // 100) + 1), 'line_percent'],
+		'contents': str(percentage),
+		'highlight_group': ['line_percent_gradient', 'line_percent'],
+		'gradient_level': percentage,
 		}]
 
 
-def line_current():
+@requires_segment_info
+def line_current(segment_info):
 	'''Return the current cursor line.'''
-	return vim_funcs['line']('.')
+	return str(segment_info['window'].cursor[0])
 
 
-def col_current(virtcol=True):
+@requires_segment_info
+def col_current(segment_info):
 	'''Return the current cursor column.
-
-	If the optional argument is True then returns visual column with concealed
-	characters ignored (default), else returns byte offset.
 	'''
-	return vim_funcs['virtcol' if virtcol else 'col']('.')
+	return str(segment_info['window'].cursor[1] + 1)
 
 
-@memoize(2)
-def branch():
-	repo = guess(os.path.abspath(vim.current.buffer.name or os.getcwd()))
-	if repo:
-		return repo.branch()
+@window_cached
+def virtcol_current():
+	'''Return current visual column with concealed characters ingored
+
+	Highlight groups used: ``virtcol_current`` or ``col_current``.
+	'''
+	return [{'contents': str(vim_funcs['virtcol']('.')),
+			'highlight_group': ['virtcol_current', 'col_current']}]
+
+
+def modified_buffers(text='+ ', join_str=','):
+	'''Return a comma-separated list of modified buffers.
+
+	:param str text:
+		text to display before the modified buffer list
+	:param str join_str:
+		string to use for joining the modified buffer list
+	'''
+	buffer_len = vim_funcs['bufnr']('$')
+	buffer_mod = [str(bufnr) for bufnr in range(1, buffer_len + 1) if int(getbufvar(bufnr, '&modified') or 0)]
+	if buffer_mod:
+		return text + join_str.join(buffer_mod)
 	return None
 
 
-# TODO Drop cache on BufWrite event
-@memoize(2, additional_key=lambda: vim.current.buffer.number)
-def file_vcs_status():
-	if vim.current.buffer.name and not vim.eval('&buftype'):
-		repo = guess(os.path.abspath(vim.current.buffer.name))
+class KwWindowThreadedSegment(KwThreadedSegment):
+	def set_state(self, **kwargs):
+		for window in vim.windows:
+			buffer = window.buffer
+			kwargs['segment_info'] = {'bufnr': buffer.number, 'buffer': buffer}
+			super(KwWindowThreadedSegment, self).set_state(**kwargs)
+
+
+class RepositorySegment(KwWindowThreadedSegment):
+	def __init__(self):
+		super(RepositorySegment, self).__init__()
+		self.directories = {}
+
+	@staticmethod
+	def key(segment_info, **kwargs):
+		# FIXME os.getcwd() is not a proper variant for non-current buffers
+		return segment_info['buffer'].name or os.getcwd()
+
+	def update(self):
+		# .compute_state() is running only in this method, and only in one 
+		# thread, thus operations with .directories do not need write locks 
+		# (.render() method is not using .directories). If this is changed 
+		# .directories needs redesigning
+		self.directories.clear()
+		super(RepositorySegment, self).update()
+
+	def compute_state(self, path):
+		repo = guess(path=path)
 		if repo:
-			status = repo.status(os.path.relpath(vim.current.buffer.name, repo.directory))
-			if not status:
-				return None
-			status = status.strip()
-			ret = []
-			for status in status:
-				ret.append({
-					'contents': status,
-					'highlight_group': ['file_vcs_status_' + status, 'file_vcs_status'],
-					})
-			ret[0]['before'] = ' '
-			return ret
-	return None
+			if repo.directory in self.directories:
+				return self.directories[repo.directory]
+			else:
+				r = self.process_repo(repo)
+				self.directories[repo.directory] = r
+				return r
+
+
+@requires_segment_info
+class RepositoryStatusSegment(RepositorySegment):
+	interval = 2
+
+	@staticmethod
+	def process_repo(repo):
+		return repo.status()
+
+
+repository_status = with_docstring(RepositoryStatusSegment(),
+'''Return the status for the current repo.''')
+
+
+@requires_segment_info
+class BranchSegment(RepositorySegment):
+	interval = 0.2
+	started_repository_status = False
+
+	@staticmethod
+	def process_repo(repo):
+		return repo.branch()
+
+	def render_one(self, update_state, segment_info, status_colors=False, **kwargs):
+		if not update_state:
+			return None
+
+		if status_colors:
+			self.started_repository_status = True
+
+		return [{
+			'contents': update_state,
+			'highlight_group': (['branch_dirty' if repository_status(segment_info=segment_info) else 'branch_clean']
+								if status_colors else []) + ['branch'],
+			'divider_highlight_group': 'branch:divider',
+			}]
+
+	def startup(self, **kwargs):
+		super(BranchSegment, self).startup()
+		if kwargs.get('status_colors', False):
+			self.started_repository_status = True
+			repository_status.startup()
+
+	def shutdown(self):
+		if self.started_repository_status:
+			repository_status.shutdown()
+		super(BranchSegment, self).shutdown()
+
+
+branch = with_docstring(BranchSegment(),
+'''Return the current working branch.
+
+:param bool status_colors:
+	determines whether repository status will be used to determine highlighting. Default: False.
+
+Highlight groups used: ``branch_clean``, ``branch_dirty``, ``branch``.
+
+Divider highlight group used: ``branch:divider``.
+''')
+
+
+@requires_segment_info
+class FileVCSStatusSegment(KwWindowThreadedSegment):
+	interval = 0.2
+
+	@staticmethod
+	def key(segment_info, **kwargs):
+		name = segment_info['buffer'].name
+		skip = not (name and (not getbufvar(segment_info['bufnr'], '&buftype')))
+		return name, skip
+
+	@staticmethod
+	def compute_state(key):
+		name, skip = key
+		if not skip:
+			repo = guess(path=name)
+			if repo:
+				status = repo.status(os.path.relpath(name, repo.directory))
+				if not status:
+					return None
+				status = status.strip()
+				ret = []
+				for status in status:
+					ret.append({
+						'contents': status,
+						'highlight_group': ['file_vcs_status_' + status, 'file_vcs_status'],
+						})
+				return ret
+		return None
+
+
+file_vcs_status = with_docstring(FileVCSStatusSegment(),
+'''Return the VCS status for this buffer.
+
+Highlight groups used: ``file_vcs_status``.
+''')

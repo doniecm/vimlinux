@@ -1,19 +1,9 @@
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
-import vim
-
-
-def source_plugin():
-	import sys
-	import os
-	if sys.version_info[:2] == (3, 3):
-		vim.command('let g:powerline_pycmd = "python3"')
-		vim.command('let g:powerline_pyeval = "py3eval"')
-	else:
-		vim.command('let g:powerline_pycmd = "python"')
-		vim.command('let g:powerline_pyeval = "pyeval"')
-	fnameescape = vim_get_func('fnameescape')
-	vim.command('source ' + fnameescape(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'powerline.vim')).decode('utf-8'))
+try:
+	import vim
+except ImportError:
+	vim = {}
 
 try:
 	_vim_globals = vim.bindeval('g:')
@@ -56,3 +46,5 @@ except AttributeError:
 			return r
 
 	vim_get_func = VimFunc
+
+getbufvar = vim_get_func('getbufvar')

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
 import os
+import sys
 
 from setuptools import setup, find_packages
 
@@ -11,7 +12,10 @@ try:
 except IOError:
 	README = ''
 
-setup(name='Powerline',
+old_python = sys.version_info < (2, 7)
+
+setup(
+	name='Powerline',
 	version='beta',
 	description='The ultimate statusline/prompt utility.',
 	long_description=README,
@@ -20,18 +24,18 @@ setup(name='Powerline',
 	author_email='kim.silkebaekken+vim@gmail.com',
 	url='https://github.com/Lokaltog/powerline',
 	scripts=[
-		'scripts/powerline-prompt',
-		'scripts/powerline-tmux',
+		'scripts/powerline',
+		'scripts/powerline-lint',
 		],
 	keywords='',
-	packages=find_packages(),
+	packages=find_packages(exclude=('tests', 'tests.*')),
 	include_package_data=True,
 	zip_safe=False,
-	test_suite='powerline',
 	install_requires=[],
 	extras_require={
 		'docs': [
 			'Sphinx',
 			],
 		},
+	test_suite='tests' if not old_python else None,
 	)

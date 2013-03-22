@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
 from powerline.renderer import Renderer
+from powerline.colorscheme import ATTR_BOLD, ATTR_ITALIC, ATTR_UNDERLINE
 
 
 class TmuxRenderer(Renderer):
 	'''Powerline tmux segment renderer.'''
-	def hl(self, fg=None, bg=None, attr=None):
+	def hlstyle(self, fg=None, bg=None, attr=None):
 		'''Highlight a segment.'''
 		# We don't need to explicitly reset attributes, so skip those calls
 		if not attr and not bg and not fg:
@@ -25,16 +26,19 @@ class TmuxRenderer(Renderer):
 			if attr is False:
 				tmux_attr += ['nobold', 'noitalics', 'nounderscore']
 			else:
-				if attr & Renderer.ATTR_BOLD:
+				if attr & ATTR_BOLD:
 					tmux_attr += ['bold']
 				else:
 					tmux_attr += ['nobold']
-				if attr & Renderer.ATTR_ITALIC:
+				if attr & ATTR_ITALIC:
 					tmux_attr += ['italics']
 				else:
 					tmux_attr += ['noitalics']
-				if attr & Renderer.ATTR_UNDERLINE:
+				if attr & ATTR_UNDERLINE:
 					tmux_attr += ['underscore']
 				else:
 					tmux_attr += ['nounderscore']
 		return '#[' + ','.join(tmux_attr) + ']'
+
+
+renderer = TmuxRenderer

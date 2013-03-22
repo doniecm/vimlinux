@@ -1,51 +1,40 @@
-# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8:noet
 
-try:
-	import cPickle as pickle
-except ImportError:
-	import pickle
-import os
-import tempfile
-import time
+from functools import wraps
+from powerline.lib.time import monotonic
+
+
+def default_cache_key(**kwargs):
+	return frozenset(kwargs.items())
 
 
 class memoize(object):
 	'''Memoization decorator with timeout.'''
-	_cache = {}
-
-	def __init__(self, timeout, additional_key=None, persistent=False, persistent_file=None):
+	def __init__(self, timeout, cache_key=default_cache_key, cache_reg_func=None):
 		self.timeout = timeout
-		self.additional_key = additional_key
-		self.persistent = persistent
-		self.persistent_file = persistent_file or os.path.join(tempfile.gettempdir(), 'powerline-cache')
+		self.cache_key = cache_key
+		self.cache = {}
+		self.cache_reg_func = cache_reg_func
 
 	def __call__(self, func):
-		def decorated_function(*args, **kwargs):
-			if self.additional_key:
-				key = (func.__name__, args, tuple(kwargs.items()), self.additional_key())
-			else:
-				key = (func.__name__, args, tuple(kwargs.items()))
-			if self.persistent:
-				try:
-					with open(self.persistent_file, 'rb') as fileobj:
-						self._cache = pickle.load(fileobj)
-				except (IOError, EOFError):
-					pass
-			cached = self._cache.get(key, None)
-			if cached is None or time.time() - cached['time'] > self.timeout:
-				cached = self._cache[key] = {
-					'result': func(*args, **kwargs),
-					'time': time.time(),
+		@wraps(func)
+		def decorated_function(**kwargs):
+			if self.cache_reg_func:
+				self.cache_reg_func(self.cache)
+				self.cache_reg_func = None
+
+			key = self.cache_key(**kwargs)
+			try:
+				cached = self.cache.get(key, None)
+			except TypeError:
+				return func(**kwargs)
+			# Handle case when time() appears to be less then cached['time'] due 
+			# to clock updates. Not applicable for monotonic clock, but this 
+			# case is currently rare.
+			if cached is None or not (cached['time'] < monotonic() < cached['time'] + self.timeout):
+				cached = self.cache[key] = {
+					'result': func(**kwargs),
+					'time': monotonic(),
 					}
-				if self.persistent:
-					try:
-						with open(self.persistent_file, 'wb') as fileobj:
-							pickle.dump(self._cache, fileobj)
-					except IOError:
-						# Unable to write to file
-						pass
-					except TypeError:
-						# Unable to pickle function result
-						pass
 			return cached['result']
 		return decorated_function

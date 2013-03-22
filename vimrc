@@ -1,4 +1,4 @@
-" filetype off
+filetype off
 filetype plugin indent on
 set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
@@ -6,20 +6,21 @@ call vundle#rc()
 " let Vundle manage Vundle
 " required! 
 Bundle 'gmarik/vundle'
-" vundle bundles
-Bundle 'klen/python-mode'
+Bundle 'Python-mode-klen'
 Bundle 'scrooloose/nerdcommenter'
+" Bundle 'scrooloose/syntastic'
 Bundle 'fholgado/minibufexpl.vim'
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'majutsushi/tagbar'
 Bundle 'altercation/vim-colors-solarized'
+Bundle 'sjl/gundo.vim'
 Bundle 'filepirate'
 
 "general settings
 syntax on
 set number
-"set relativenumber
+set relativenumber
 set nocompatible
 set modelines=0
 set shell=/bin/bash
@@ -27,7 +28,12 @@ set lazyredraw
 set matchtime=3
 set laststatus=2
 set encoding=utf-8
+set nobackup
 
+"statusline
+"set statusline+=%#warningmsg#
+"set statusline+=%{SyntasticStatuslineFlag()}
+"set statusline+=%*
 
 "let mapleader = "\"
 set title
@@ -67,12 +73,13 @@ augroup END
 set wrap
 set textwidth=120
 set formatoptions=qrn1
-"set colorcolumn=120
+set colorcolumn=120
 
 "keymappings
 imap jj <ESC>
 "save
 map <C-s> :w<CR>
+imap <C-s> <ESC>:w<CR>
 " open new window
 nnoremap <leader>w <C-w>v<C-w>l
 
@@ -89,6 +96,17 @@ nmap <C-h> <C-w>h
 nmap <C-j> <C-w>j  
 nmap <C-k> <C-w>k  
 nmap <C-l> <C-w>l 
+
+"relative numbers toggle
+function! NumberToggle()
+  if(&relativenumber == 1)
+    set number
+  else
+    set relativenumber
+  endif
+endfunc
+
+nnoremap <C-,> :call NumberToggle()<cr>
 
 " Source the vimrc file after saving it. This way, you don't have to reload Vim to see the changes.  
 if has("autocmd")  
@@ -107,8 +125,9 @@ if has("gui_running")
     set guioptions+=a
     set guioptions+=m
     set listchars=tab:¿\ ,eol:¬ 
-    "set guifont=Meslo\ LG\ M\ DZ\ for\ Powerline\ 10
-    set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
+    "set guifont=Meslo\ LG\ L\ for\ Powerline\ 9
+    "set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
+    set guifont=Inconsolata\ for\ Powerline\ Medium\ 11
     let g:Powerline_symbols = 'fancy'
 endif
 
@@ -132,3 +151,9 @@ nnoremap <C-n> :NERDTreeToggle<cr>
 
 "python-mode settings
 let g:pymode_lint_checker = "pyflakes,pep8"
+"syntastic settings (syntax checker)
+let g:syntastic_cpp_compiler_options = '-std=c++0x'
+let g:syntastic_auto_loc_list=1
+
+"gundo settings
+nnoremap <F5> :GundoToggle<CR>

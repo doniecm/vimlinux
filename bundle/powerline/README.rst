@@ -4,14 +4,21 @@ Powerline
 :Author: Kim Silkebækken (kim.silkebaekken+vim@gmail.com)
 :Source: https://github.com/Lokaltog/powerline
 :Version: beta
+:Build status:
+    .. image:: https://api.travis-ci.org/Lokaltog/powerline.png?branch=develop
+       :target: `travis-build-status`_
+       :alt: Build status
 
 This is the upcoming version of Powerline, implemented in Python. The 
 project is currently in a stable beta and almost ready for release.
 
-* Consult the `documentation <http://lokaltog.github.com/powerline/>`_ for 
-  more information and installation instructions.
+* Consult the `documentation 
+  <https://powerline.readthedocs.org/en/latest/>`_ for more information and 
+  installation instructions.
 * Check out `powerline-fonts <https://github.com/Lokaltog/powerline-fonts>`_ 
   for pre-patched versions of popular coding fonts.
+
+.. _travis-build-status: https://travis-ci.org/Lokaltog/powerline
 
 Screenshots
 -----------

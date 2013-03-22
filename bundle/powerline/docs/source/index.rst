@@ -8,10 +8,18 @@ Powerline
 
    introduction
    overview
-   fontpatching
    configuration
-   troubleshooting
+   tipstricks
+   fontpatching
    license-credits
+
+Segments
+========
+
+.. toctree::
+   segments/common
+   segments/shell
+   segments/vim
 
 Indices and tables
 ==================

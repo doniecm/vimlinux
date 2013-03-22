@@ -1,3 +1,4 @@
+# vim:fileencoding=utf-8:noet
 try:
 	import pygit2 as git
 
@@ -59,17 +60,21 @@ try:
 				wt_column = ' '
 				index_column = ' '
 				untracked_column = ' '
-				for status in self._repo().status():
+				for status in self._repo().status().values():
+					if status & git.GIT_STATUS_WT_NEW:
+						untracked_column = 'U'
+						continue
+
 					if status & (git.GIT_STATUS_WT_DELETED
 							| git.GIT_STATUS_WT_MODIFIED):
 						wt_column = 'D'
-					elif status & (git.GIT_STATUS_INDEX_NEW
+
+					if status & (git.GIT_STATUS_INDEX_NEW
 							| git.GIT_STATUS_INDEX_MODIFIED
 							| git.GIT_STATUS_INDEX_DELETED):
 						index_column = 'I'
-					elif status & git.GIT_STATUS_WT_NEW:
-						untracked_column = 'U'
-				return wt_column + index_column + untracked_column
+				r = wt_column + index_column + untracked_column
+				return r if r != '   ' else None
 
 		def branch(self):
 			try:
@@ -92,8 +97,9 @@ except ImportError:
 	def readlines(cmd, cwd):
 		p = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE, cwd=cwd)
 		p.stderr.close()
-		for line in p.stdout:
-			yield line[:-1].decode('utf-8')
+		with p.stdout:
+			for line in p.stdout:
+				yield line[:-1].decode('utf-8')
 
 	class Repository(object):
 		__slots__ = ('directory',)
@@ -107,13 +113,9 @@ except ImportError:
 		def status(self, path=None):
 			if path:
 				try:
-					return next(self._gitcmd('status', '--porcelain', '--', path))[:2]
+					return next(self._gitcmd('status', '--porcelain', '--ignored', '--', path))[:2]
 				except StopIteration:
-					try:
-						next(self._gitcmd('ls-files', '--ignored', '--exclude-standard', '--others', '--', path))
-						return '!!'
-					except StopIteration:
-						return None
+					return None
 			else:
 				wt_column = ' '
 				index_column = ' '
@@ -121,14 +123,18 @@ except ImportError:
 				for line in self._gitcmd('status', '--porcelain'):
 					if line[0] == '?':
 						untracked_column = 'U'
+						continue
 					elif line[0] == '!':
-						pass
-					elif line[0] != ' ':
+						continue
+
+					if line[0] != ' ':
 						index_column = 'I'
-					elif line[1] != ' ':
+
+					if line[1] != ' ':
 						wt_column = 'D'
+
 				r = wt_column + index_column + untracked_column
-				return None if r == '   ' else r
+				return r if r != '   ' else None
 
 		def branch(self):
 			for line in self._gitcmd('branch', '-l'):
