@@ -8,14 +8,17 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 Bundle 'Python-mode-klen'
 Bundle 'scrooloose/nerdcommenter'
-" Bundle 'scrooloose/syntastic'
+"Bundle 'scrooloose/syntastic'
 Bundle 'fholgado/minibufexpl.vim'
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'majutsushi/tagbar'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'sjl/gundo.vim'
-Bundle 'filepirate'
+Bundle 'repeat.vim'
+Bundle 'ctrlp.vim'
+Bundle 'abolish.vim'
+Bundle 'dhazel/conque-term'
 
 "general settings
 syntax on
@@ -29,6 +32,7 @@ set matchtime=3
 set laststatus=2
 set encoding=utf-8
 set nobackup
+setlocal spell spelllang=en_us
 
 "statusline
 "set statusline+=%#warningmsg#
@@ -106,7 +110,7 @@ function! NumberToggle()
   endif
 endfunc
 
-nnoremap <C-,> :call NumberToggle()<cr>
+nnoremap <C-i> :call NumberToggle()<cr>
 
 " Source the vimrc file after saving it. This way, you don't have to reload Vim to see the changes.  
 if has("autocmd")  
@@ -150,10 +154,13 @@ imap <leader>l <ESC>:TagbarToggle<cr>ij"""""
 nnoremap <C-n> :NERDTreeToggle<cr>
 
 "python-mode settings
-let g:pymode_lint_checker = "pyflakes,pep8"
+let g:pymode_lint_checker = "pyflakes,pep8,mccabe"
 "syntastic settings (syntax checker)
 let g:syntastic_cpp_compiler_options = '-std=c++0x'
 let g:syntastic_auto_loc_list=1
 
 "gundo settings
 nnoremap <F5> :GundoToggle<CR>
+
+"Conque settings
+let g:ConqueTerm_Color = 0
