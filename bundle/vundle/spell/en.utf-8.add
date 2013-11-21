@@ -16,3 +16,9 @@ shaders
 xsiLib
 ui
 HeadURL
+inspectable
+reparent
+xsiApp
+LogMessage
+Softimage
+emdlresolutions
