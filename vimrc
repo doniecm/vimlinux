@@ -22,6 +22,7 @@ Bundle 'ctrlp.vim'
 Bundle 'abolish.vim'
 Bundle 'dhazel/conque-term'
 Bundle 'fugitive.vim'
+Bundle 'Valloric/YouCompleteMe'
 
 "general settings
 syntax on
@@ -138,7 +139,8 @@ if has("gui_running")
     set listchars=tab:¿\ ,eol:¬ 
     "set guifont=Meslo\ LG\ L\ for\ Powerline\ 9
     "set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
-    set guifont=Inconsolata\ for\ Powerline\ Medium\ 11
+    "set guifont=Inconsolata\ for\ Powerline\ Medium\ 11
+    set guifont=DejaVu\ Sans\ Mono\ 9 
     let g:Powerline_symbols = 'fancy'
 else
     colors zellner
