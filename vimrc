@@ -23,6 +23,11 @@ Bundle 'abolish.vim'
 Bundle 'dhazel/conque-term'
 Bundle 'fugitive.vim'
 Bundle 'Valloric/YouCompleteMe'
+Bundle "MarcWeber/vim-addon-mw-utils"
+Bundle "tomtom/tlib_vim"
+Bundle "garbas/vim-snipmate"
+" Optional:
+Bundle "honza/vim-snippets"
 
 "general settings
 syntax on
@@ -165,7 +170,9 @@ imap <leader>l <ESC>:TagbarToggle<cr>ij"""""
 nnoremap <C-n> :NERDTreeToggle<cr>
 
 "python-mode settings
-let g:pymode_lint_checker = "pyflakes,pep8"
+"let g:pymode_lint_checker = "pyflakes,pep8"
+let g:pymode_lint_checker = "pyflakes,pep8,mccabe"
+let g:pymode_lint_ignore = "E501,W0704,W0511,W0201,R0201,W0231"
 "syntastic settings (syntax checker)
 "let g:syntastic_cpp_compiler_options = '-std=c++0x'
 let g:syntastic_auto_loc_list=1
@@ -181,3 +188,8 @@ let g:easytags_cmd = '/usr/bin/ctags'
 set tags=./tags;
 let g:easytags_dynamic_files = 1
 let g:easytags_auto_highlight = 0
+
+"ycomplete
+let g:ycm_complete_in_comments = 1
+let g:ycm_autoclose_preview_window_after_insertion = 1 
+let g:ycm_autoclose_preview_window_after_completion = 1

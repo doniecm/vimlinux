@@ -22,3 +22,13 @@ xsiApp
 LogMessage
 Softimage
 emdlresolutions
+websocket
+ftrack
+plugins
+FTrack
+PLUGIN
+filesystem
+plugin
+Accessor
+accessor
+getPath
